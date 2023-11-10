@@ -1,5 +1,6 @@
 package com.yupi.ioj.controller;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
 import com.yupi.ioj.annotation.AuthCheck;
@@ -10,10 +11,8 @@ import com.yupi.ioj.common.ResultUtils;
 import com.yupi.ioj.constant.UserConstant;
 import com.yupi.ioj.exception.BusinessException;
 import com.yupi.ioj.exception.ThrowUtils;
-import com.yupi.ioj.model.dto.question.QuestionAddRequest;
-import com.yupi.ioj.model.dto.question.QuestionEditRequest;
-import com.yupi.ioj.model.dto.question.QuestionQueryRequest;
-import com.yupi.ioj.model.dto.question.QuestionUpdateRequest;
+import com.yupi.ioj.model.dto.question.*;
+import com.yupi.ioj.model.dto.user.UserQueryRequest;
 import com.yupi.ioj.model.entity.Question;
 import com.yupi.ioj.model.entity.User;
 import com.yupi.ioj.model.vo.QuestionVO;
@@ -66,6 +65,15 @@ public class QuestController {
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
         }
+        List<JudgeCase> judgeCase = questionAddRequest.getJudgeCase();
+        if (judgeCase != null) {
+            question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
+        }
+        List<JudgeConfig> judgeConfig = questionAddRequest.getJudgeConfig();
+        if (judgeConfig != null) {
+            question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
+        }
+
         questionService.validQuestion(question, true);
         User loginUser = userService.getLoginUser(request);
         question.setUserId(loginUser.getId());
@@ -119,6 +127,14 @@ public class QuestController {
         List<String> tags = questionUpdateRequest.getTags();
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
+        }
+        List<JudgeCase> judgeCase = questionUpdateRequest.getJudgeCase();
+        if (judgeCase != null) {
+            question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
+        }
+        List<JudgeConfig> judgeConfig = questionUpdateRequest.getJudgeConfig();
+        if (judgeConfig != null) {
+            question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
         }
         // 参数校验
         questionService.validQuestion(question, false);
@@ -191,24 +207,25 @@ public class QuestController {
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
 
-    // endregion
-
     /**
-     * 分页搜索（从 ES 查询，封装类）
+     * 分页获取题目列表（仅管理员）
      *
      * @param questionQueryRequest
      * @param request
      * @return
      */
-    @PostMapping("/search/page/vo")
-    public BaseResponse<Page<QuestionVO>> searchQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
-            HttpServletRequest request) {
+    @PostMapping("/list/page")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<Question>> listQuestionByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
+                                                   HttpServletRequest request) {
+        long current = questionQueryRequest.getCurrent();
         long size = questionQueryRequest.getPageSize();
-        // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        Page<Question> questionPage = questionService.searchFromEs(questionQueryRequest);
-        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
+        Page<Question> questionPage = questionService.page(new Page<>(current, size),
+                questionService.getQueryWrapper(questionQueryRequest));
+        return ResultUtils.success(questionPage);
     }
+
+    // endregion
 
     /**
      * 编辑（用户）
