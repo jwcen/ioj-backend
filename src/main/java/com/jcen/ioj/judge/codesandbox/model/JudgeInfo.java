@@ -1,4 +1,4 @@
-package com.jcen.ioj.model.dto.qustionsubmit;
+package com.jcen.ioj.judge.codesandbox.model;
 
 import lombok.Data;
 

@@ -3,6 +3,7 @@ package com.jcen.ioj.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.jcen.ioj.judge.JudgeService;
 import com.jcen.ioj.mapper.QuestionSubmitMapper;
 import com.jcen.ioj.model.entity.Question;
 import com.jcen.ioj.model.entity.QuestionSubmit;
@@ -20,10 +21,12 @@ import com.jcen.ioj.service.QuestionService;
 import com.jcen.ioj.utils.SqlUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +42,10 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
     private QuestionService questionService;
     @Resource
     private UserServiceImpl userService;
+
+    @Resource
+    @Lazy
+    private JudgeService judgeService;
 
     /**
      * 题目提交
@@ -56,15 +63,15 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持该编程语言");
         }
 
-        long questionId = questionSubmitAddRequest.getQuestionId();
         // 判断实体是否存在，根据类别获取实体
+        long questionId = questionSubmitAddRequest.getQuestionId();
         Question question = questionService.getById(questionId);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
+
         // 是否已题目提交
         long userId = loginUser.getId();
-
         QuestionSubmit questionSubmit = new QuestionSubmit();
         questionSubmit.setUserId(userId);
         questionSubmit.setQuestionId(questionId);
@@ -79,7 +86,13 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据保存失败");
         }
 
-        return questionSubmit.getId();
+        Long questionSubmitId = questionSubmit.getId();
+        // 异步执行判题服务
+        CompletableFuture.runAsync(() -> {
+            judgeService.doJudge(questionSubmitId);
+        });
+
+        return questionSubmitId;
     }
 
     /**

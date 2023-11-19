@@ -3,8 +3,8 @@ package com.jcen.ioj.wxmp;
 /**
  * 微信公众号相关常量
  *
- * @author <a href="https://github.com/lijcen">程序员鱼皮</a>
- * @from <a href="https://jcen.icu">编程导航知识星球</a>
+ * @author <a href="https://github.com/jwcen">jcen</a>
+ * 
  **/
 public class WxMpConstant {
 

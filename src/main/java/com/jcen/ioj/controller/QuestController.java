@@ -28,8 +28,8 @@ import java.util.List;
 /**
  * 题目接口
  *
- * @author <a href="https://github.com/lijcen">程序员鱼皮</a>
- * @from <a href="https://jcen.icu">编程导航知识星球</a>
+ * @author <a href="https://github.com/jwcen">jcen</a>
+ * 
  */
 @RestController
 @RequestMapping("/question")
@@ -50,7 +50,6 @@ public class QuestController {
      * 创建
      *
      * @param questionAddRequest
-     * @param request
      * @return
      */
     @PostMapping("/add")
@@ -58,16 +57,20 @@ public class QuestController {
         if (questionAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         Question question = new Question();
         BeanUtils.copyProperties(questionAddRequest, question);
+
         List<String> tags = questionAddRequest.getTags();
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
         }
+
         List<JudgeCase> judgeCase = questionAddRequest.getJudgeCase();
         if (judgeCase != null) {
             question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
         }
+
         JudgeConfig judgeConfig = questionAddRequest.getJudgeConfig();
         if (judgeConfig != null) {
             question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
@@ -80,8 +83,8 @@ public class QuestController {
         question.setThumbNum(0);
         boolean result = questionService.save(question);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        long newQuestionId = question.getId();
-        return ResultUtils.success(newQuestionId);
+
+        return ResultUtils.success(question.getId());
     }
 
     /**
@@ -96,6 +99,7 @@ public class QuestController {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         User user = userService.getLoginUser(request);
         long id = deleteRequest.getId();
         // 判断是否存在
@@ -105,8 +109,8 @@ public class QuestController {
         if (!oldQuestion.getUserId().equals(user.getId()) && !userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        boolean b = questionService.removeById(id);
-        return ResultUtils.success(b);
+
+        return ResultUtils.success(questionService.removeById(id));
     }
 
     /**
@@ -121,27 +125,34 @@ public class QuestController {
         if (questionUpdateRequest == null || questionUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         Question question = new Question();
         BeanUtils.copyProperties(questionUpdateRequest, question);
+
         List<String> tags = questionUpdateRequest.getTags();
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
         }
+
         List<JudgeCase> judgeCase = questionUpdateRequest.getJudgeCase();
         if (judgeCase != null) {
             question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
         }
+
         JudgeConfig judgeConfig = questionUpdateRequest.getJudgeConfig();
         if (judgeConfig != null) {
             question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
         }
+
         // 参数校验
         questionService.validQuestion(question, false);
         long id = questionUpdateRequest.getId();
         // 判断是否存在
         Question oldQuestion = questionService.getById(id);
         ThrowUtils.throwIf(oldQuestion == null, ErrorCode.NOT_FOUND_ERROR);
+
         boolean result = questionService.updateById(question);
+
         return ResultUtils.success(result);
     }
 
@@ -156,6 +167,7 @@ public class QuestController {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         Question question = questionService.getById(id);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
@@ -180,11 +192,15 @@ public class QuestController {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         Question question = questionService.getById(id);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        return ResultUtils.success(questionService.getQuestionVO(question, request));
+
+        QuestionVO questionVO = questionService.getQuestionVO(question, request);
+
+        return ResultUtils.success(questionVO);
     }
 
     /**
@@ -203,7 +219,10 @@ public class QuestController {
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
                 questionService.getQueryWrapper(questionQueryRequest));
-        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
+
+        Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);
+
+        return ResultUtils.success(questionVOPage);
     }
 
     /**
@@ -219,6 +238,7 @@ public class QuestController {
         if (questionQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
         User loginUser = userService.getLoginUser(request);
         questionQueryRequest.setUserId(loginUser.getId());
         long current = questionQueryRequest.getCurrent();
@@ -227,7 +247,10 @@ public class QuestController {
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
                 questionService.getQueryWrapper(questionQueryRequest));
-        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
+
+        Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);
+
+        return ResultUtils.success(questionVOPage);
     }
 
     /**
@@ -245,6 +268,7 @@ public class QuestController {
         long size = questionQueryRequest.getPageSize();
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
                 questionService.getQueryWrapper(questionQueryRequest));
+
         return ResultUtils.success(questionPage);
     }
 
