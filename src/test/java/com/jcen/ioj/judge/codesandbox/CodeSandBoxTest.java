@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -22,7 +23,7 @@ class CodeSandBoxTest {
     private String type;
 
     @Test
-    void executeCode() {
+    void executeCode() throws IOException {
         CodeSandBox codeSandBox = new ExampleCodeSandBox();
 
         String code = "func main() {}";
@@ -40,7 +41,7 @@ class CodeSandBoxTest {
     }
 
     @Test
-    void executeCodeByType() {
+    void executeCodeByType() throws IOException {
         CodeSandBox codeSandBox = CodeSandBoxFactory.newInstance(type);
 
         String code = "func main() {}";
@@ -62,8 +63,14 @@ class CodeSandBoxTest {
         CodeSandBox codeSandBox = CodeSandBoxFactory.newInstance(type);
         CodeSandBoxProxy codeSandBoxProxy = new CodeSandBoxProxy(codeSandBox);
 
-        String code = "func main() {}";
-        String language = QuestionSubmitLanguageEnum.GOLANG.getValue();
+        String code = "public class Main {\n" +
+                "    public static void main(String[] args) {\n" +
+                "        int a = Integer.parseInt(args[0]);\n" +
+                "        int b = Integer.parseInt(args[1]);\n" +
+                "        System.out.println(\"result: \" + (a + b));\n" +
+                "    }\n" +
+                "}";
+        String language = QuestionSubmitLanguageEnum.JAVA.getValue();
         List<String> inputList = Arrays.asList("1 2", "3 4");
         ExecuteCodeRequest executeCodeRequest = ExecuteCodeRequest.builder()
                 .code(code)
@@ -76,7 +83,7 @@ class CodeSandBoxTest {
         Assertions.assertNotNull(executeCodeResponse);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
             String type = scanner.next();
